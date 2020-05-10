@@ -37,7 +37,7 @@ defmodule Utils do
     end
 
     def zip_to_gz(file_name) do
-        IO.inspect(file_name, label: "file_name")
+        IO.inspect(file_name, label: "input_file_name")
 
         # Unzip.LocalFile implements Unzip.FileAccess
         zip_file = Unzip.LocalFile.open(file_name)
@@ -50,29 +50,18 @@ defmodule Utils do
         IO.inspect(file_entries, label: "file_entries")
         List.foldl(file_entries, 0, fn entry, _acc -> IO.inspect(entry.file_name, label: "file_name"); 0 end)
 
-        zip_name = List.foldr(
+        path_to_zip = List.foldr(
             file_entries,
             "",
             fn entry, acc ->
                 case entry.compressed_size do
-                    0 -> entry.file_name;
+                    0 ->
+                        IO.inspect(entry.file_name, label: "compressed_size 0")
+                        create_dir(entry.file_name, file_name);
                     _ -> acc
                 end
             end)
 
-        IO.inspect(zip_name, label: "zip_name")
-
-        zip_name1 = Regex.replace(~r/\/$/, zip_name, "")
-
-        IO.inspect(zip_name1, label: "zip_name1")
-
-        zip_name2 = zip_name1 <> ".zip"
-        IO.inspect(zip_name2, label: "zip_name2")
-
-        path_to_zip = Regex.replace(~r/(#{zip_name2})$/, file_name, "")
-        IO.inspect(path_to_zip, label: "path_to_zip")
-
-        File.mkdir_p!(path_to_zip <> zip_name1)
         List.foldr(
             file_entries,
             "",
@@ -85,4 +74,19 @@ defmodule Utils do
             end)
 
     end
+
+    def create_dir(zip_name, file_name) do
+        IO.inspect(zip_name, label: "zip_name")
+
+        zip_name1 = Regex.replace(~r/\/$/, zip_name, "")
+
+        IO.inspect(zip_name1, label: "zip_name1")
+
+        path_to_zip = Regex.replace(~r/[a-zA-Z0-9]{1,}.zip$/, file_name, "")
+        IO.inspect(path_to_zip, label: "path_to_zip")
+
+        File.mkdir_p!(path_to_zip <> zip_name1)
+        path_to_zip
+    end
+
 end

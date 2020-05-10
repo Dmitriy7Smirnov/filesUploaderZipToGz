@@ -7,7 +7,8 @@ defmodule FilesUploader do
         Logger.info("FilesUploader started...", [])
         port = Application.get_env(:files_uploader, :port)
         children = [
-            Plug.Adapters.Cowboy.child_spec(:http, Router, [], port: port)
+            Plug.Adapters.Cowboy.child_spec(:http, Router, [], port: port),
+            Zip
         ]
         Supervisor.start_link(children, [strategy: :one_for_one, name: FilesUploader.Supervisor])
     end

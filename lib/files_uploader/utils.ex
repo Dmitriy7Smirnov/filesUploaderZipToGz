@@ -38,6 +38,8 @@ defmodule Utils do
 
     def zip_to_gz(file_name) do
         IO.inspect(file_name, label: "input_file_name")
+        path_to_zip = Regex.replace(~r/[a-zA-Z0-9._]{1,}zip$/, file_name, "")
+        IO.inspect(path_to_zip, label: "path_to_zip")
 
         # Unzip.LocalFile implements Unzip.FileAccess
         zip_file = Unzip.LocalFile.open(file_name)
@@ -50,14 +52,16 @@ defmodule Utils do
         IO.inspect(file_entries, label: "file_entries")
         List.foldl(file_entries, 0, fn entry, _acc -> IO.inspect(entry.file_name, label: "file_name"); 0 end)
 
-        path_to_zip = List.foldr(
+        List.foldr(
             file_entries,
             "",
             fn entry, acc ->
                 case entry.compressed_size do
                     0 ->
                         IO.inspect(entry.file_name, label: "compressed_size 0")
-                        create_dir(entry.file_name, file_name);
+                        zip_name1 = Regex.replace(~r/\/$/, entry.file_name, "")
+                        IO.inspect(zip_name1, label: "zip_name1")
+                        File.mkdir_p!(path_to_zip <> zip_name1)
                     _ -> acc
                 end
             end)
@@ -69,24 +73,16 @@ defmodule Utils do
                 case entry.compressed_size do
                     0 -> "";
                     _ ->
-                        make_gz(Unzip.file_stream!(unzip, entry.file_name), path_to_zip <> entry.file_name)
+                        _x = "WOW"
+                        IO.inspect(entry.file_name, label: "MODULE UTILS FUNCTION ZIP_TO_GZ")
+                        Unzip.test()
+                        try do
+                            make_gz(Unzip.file_stream!(unzip, entry.file_name), path_to_zip <> entry.file_name)
+                        rescue
+                            error -> IO.inspect(error, laberl: "ERROR OCCUR")
+                        end
                 end
             end)
 
     end
-
-    def create_dir(zip_name, file_name) do
-        IO.inspect(zip_name, label: "zip_name")
-
-        zip_name1 = Regex.replace(~r/\/$/, zip_name, "")
-
-        IO.inspect(zip_name1, label: "zip_name1")
-
-        path_to_zip = Regex.replace(~r/[a-zA-Z0-9]{1,}.zip$/, file_name, "")
-        IO.inspect(path_to_zip, label: "path_to_zip")
-
-        File.mkdir_p!(path_to_zip <> zip_name1)
-        path_to_zip
-    end
-
 end

@@ -111,7 +111,7 @@ defmodule Unzip do
     offset = entry.local_header_offset + 30 + file_name_length + extra_field_length
 
     stream!(zip, offset, entry.compressed_size)
-    |> decompress(compression_method, entry.uncompressed_size)
+    |> decompress(compression_method)
     |> crc_check(entry.crc)
   end
 
@@ -132,7 +132,7 @@ defmodule Unzip do
     end)
   end
 
-  defp decompress(stream, 0x8, uncompressed_size) do
+  defp decompress(stream, 0x8) do
     x = "WOW"
     IO.inspect(x, label: "MODULE UNZIP FUNCTION DECOMPRESS ")
     stream
@@ -142,7 +142,7 @@ defmodule Unzip do
         window_bits = -15
         IO.inspect(window_bits, label: "MODULE UNZIP FUNCTION DECOMPRESS ")
         :ok = :zlib.inflateInit(z, -15)
-        :zlib.setBufSize(z, uncompressed_size)
+        :zlib.setBufSize(z, 512 * 1024)
         {z, true}
       end,
       # fn data, z -> {[:zlib.inflate(z, data)], z} end,
@@ -150,9 +150,12 @@ defmodule Unzip do
           case flag do
               true ->
                   IO.inspect(x, label: "MODULE UNZIP FUNCTION DECOMPRESS MY SAFEINFLATE CASE 1")
-                  {_, uncompressed} = :zlib.inflateChunk(z, data)
+                  uncompressed1 = case :zlib.inflateChunk(z, data) do
+                      {_, uncompressed} -> uncompressed;
+                      uncompressed -> uncompressed
+                  end
                   IO.inspect(x, label: "MODULE UNZIP FUNCTION DECOMPRESS MY SAFEINFLATE CASE 1 1")
-                  {[uncompressed], {z, false}};
+                  {[uncompressed1], {z, false}};
               false ->
                   IO.inspect(x, label: "MODULE UNZIP FUNCTION DECOMPRESS MY SAFEINFLATE CASE 2")
                   uncompressed = :zlib.inflateChunk(z)
